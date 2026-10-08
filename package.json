@@ -1,0 +1,16 @@
+{
+  "name": "spaceship",
+  "version": "0.1.0",
+  "description": "Движок портфолио-полётов: самолёт, корабль, вертолёт, машина или мотоцикл летит или едет по вашим проектам с GitHub.",
+  "type": "module",
+  "private": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch-github.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "python3 -m http.server 8000 --bind 127.0.0.1",
+    "deploy": "bash scripts/deploy-jino.sh"
+  }
+}

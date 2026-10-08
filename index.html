@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Портфолио — полёт по проектам</title>
+  <meta name="description" content="Полёт по проектам: транспорт летит или едет по работам, а каждый проект — отдельный мир.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <canvas id="scene" tabindex="-1" aria-label="3D-сцена: транспорт и проекты"></canvas>
+  <canvas id="warp" aria-hidden="true"></canvas>
+  <div id="labels"></div>
+
+  <header class="hud brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <p class="brand-name" id="t-brand-name"></p>
+      <p class="brand-role" id="t-brand-role"></p>
+    </div>
+  </header>
+
+  <section class="hud tele" aria-label="Телеметрия">
+    <div class="tele-row"><span>Статус</span><b id="t-status">Готов к взлёту</b></div>
+    <div class="tele-grid">
+      <div><span>Скорость</span><b id="t-speed">0</b><small>км/ч</small></div>
+      <div><span>До сектора</span><b id="t-dist">—</b><small>км</small></div>
+    </div>
+    <div class="tele-row"><span>Сектор</span><b id="t-sector">—</b></div>
+    <div class="tele-row"><span>Миров открыто</span><b><span id="t-found">0</span> / <span id="t-total">0</span></b></div>
+    <div class="tele-row"><span>Транспорт</span><b id="t-callsign"></b></div>
+  </section>
+
+  <nav class="hud missions" aria-label="Маршрут по проектам">
+    <p class="eyebrow">Маршрут</p>
+    <ol id="missions"></ol>
+  </nav>
+
+  <div class="hud controls" aria-hidden="true">
+    <span><kbd>W A S D</kbd> курс</span>
+    <span><kbd>Shift</kbd> форсаж</span>
+    <span><kbd>Space</kbd> тормоз</span>
+    <span><kbd>Q E</kbd> вверх / вниз</span>
+    <span><kbd>Клик</kbd> автопилот</span>
+    <span><kbd>Esc</kbd> в полёт</span>
+  </div>
+
+  <div class="scan" id="scan" role="status">
+    <span class="scan-label">Вход в орбиту</span>
+    <b id="scan-name"></b>
+    <button id="scan-go" class="btn">Стыковка <kbd>Enter</kbd></button>
+  </div>
+
+  <button id="btn-free" class="corner-btn btn ghost">В полёт</button>
+  <button id="btn-sound" class="corner-btn btn ghost" aria-pressed="false">Звук выкл</button>
+
+  <aside id="card" class="card" aria-hidden="true" aria-live="polite">
+    <button id="card-close" class="card-close" aria-label="Закрыть карточку">×</button>
+    <div id="card-body" class="card-body"></div>
+  </aside>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <section id="intro" class="intro is-hidden">
+    <div class="intro-inner">
+      <p class="eyebrow" id="hero-eyebrow"></p>
+      <h1 id="hero-name" class="hero-name"></h1>
+      <p id="hero-role" class="hero-role"></p>
+      <p id="hero-lead" class="hero-lead"></p>
+      <p id="hero-text" class="hero-text"></p>
+      <button id="btn-takeoff" class="btn btn-big">Взлететь</button>
+      <p class="hero-hint">Курсор или WASD — курс · Shift — форсаж · клик по цели — автопилот</p>
+      <nav class="vehicle-switch" aria-label="Выбор транспорта">
+        <span class="eyebrow">Транспорт</span>
+        <div id="vehicle-chips" class="vehicle-chips"></div>
+      </nav>
+    </div>
+  </section>
+
+  <p id="boot-error" class="boot-error" hidden></p>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

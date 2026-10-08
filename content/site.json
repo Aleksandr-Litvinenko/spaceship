@@ -1,0 +1,123 @@
+{
+  "site": {
+    "title": "Александр Литвиненко",
+    "lang": "ru",
+    "github": "Aleksandr-Litvinenko",
+    "domain": "spaceship.product1c.ru",
+    "vehicle": "plane",
+    "environment": "auto",
+    "accent": ["#ff5fd2", "#2de1c2", "#ffcf6b", "#7b5cff"],
+    "intro": {
+      "eyebrow": "Резюме · позывной ALX-01"
+    },
+    "vehicleRules": []
+  },
+
+  "person": {
+    "name": "Александр Литвиненко",
+    "callsign": "ALX-01",
+    "role": "AI Founder · Product Manager",
+    "lead": "Основал SalesWings и довёл ИИ-тренажёр для отделов продаж до первых платящих B2B-клиентов.",
+    "bio": "Семь лет делаю B2B-продукты: интеграции, ERP, корпоративные порталы, ИИ. Сервисы собираю сам с Claude Code и Codex, 14 из них работают в проде.",
+    "seeking": "Ищу роль Senior PM или AI PM в B2B SaaS или ИИ-продукте, удалённо или с переездом.",
+    "stats": [
+      { "value": "+25%", "label": "конверсия из лида в сделку у клиентов SalesWings" },
+      { "value": "25→1%", "label": "сорвавшихся сделок у ювелирного ритейлера после интеграции" },
+      { "value": "14", "label": "моих сервисов и сайтов работают в проде" },
+      { "value": "7 лет", "label": "в B2B: интеграции, ERP, порталы, ИИ" }
+    ],
+    "experience": [
+      { "period": "апр 2025 — сейчас", "role": "AI SaaS Founder", "org": "SalesWings" },
+      { "period": "авг 2024 — сейчас", "role": "Technical Product Manager · Head of Enterprise Solutions", "org": "КОДАР, Москва" },
+      { "period": "мар 2022 — авг 2024", "role": "Руководитель проекта · Product Manager", "org": "Портал-Юг, Краснодар" },
+      { "period": "июн 2020 — мар 2022", "role": "Программист 1С · Product analyst · бизнес-аналитик", "org": "ИНК-ГРУПП, Краснодар" },
+      { "period": "авг 2019 — июн 2020", "role": "Technical Product Specialist · программист 1С", "org": "Первый БИТ" }
+    ],
+    "skills": [
+      { "group": "Продукт", "items": ["custdev", "JTBD", "RICE", "OKR", "юнит-экономика", "финмодель", "роадмап"] },
+      { "group": "ИИ", "items": ["мультиагентные LLM-системы", "дообучение моделей", "MCP", "Agent Skills"] },
+      { "group": "Инженерия", "items": ["TypeScript", "React", "PostgreSQL", "Docker", "WebGL", "ESB", "REST", "OData", "1С", "Bitrix24"] }
+    ],
+    "education": [
+      "Университет Иннополис — магистратура «Управление цифровым продуктом», 2026, диплом с отличием",
+      "ИМСИТ — бакалавриат «Бизнес-информатика», 2019"
+    ],
+    "certificates": [
+      "SkillGrade Senior Product Manager, 2025",
+      "1С:Руководитель проекта, 2024",
+      "1С:Специалист-консультант, 2019",
+      "Школа бизнес-тренеров ICBT, 2017"
+    ],
+    "languages": "Русский — родной · английский C1 · немецкий A1",
+    "principles": [
+      "Сначала разбираюсь в бизнес-задаче, модель выбираю потом.",
+      "Агент по умолчанию только читает данные, запись подтверждает человек.",
+      "Отделяю проверенный факт от эксперимента и предположения.",
+      "Публикую документацию вместе с кодом, а ограничения вместе с результатом."
+    ]
+  },
+
+  "contacts": [
+    { "label": "Telegram", "value": "@DED_GENA", "url": "https://t.me/DED_GENA" },
+    { "label": "Email", "value": "alexanderlitvinenko@internet.ru", "url": "mailto:alexanderlitvinenko@internet.ru" },
+    { "label": "GitHub", "value": "github.com/Aleksandr-Litvinenko", "url": "https://github.com/Aleksandr-Litvinenko" },
+    { "label": "Резюме онлайн", "value": "cv.product1c.ru", "url": "https://cv.product1c.ru/" }
+  ],
+
+  "projects": {
+    "mode": "curated",
+    "top": 6,
+    "items": [
+      {
+        "repo": "1c-ai-guide",
+        "name": "Гайд: ИИ-агент для 1С",
+        "when": "2026",
+        "role": "Автор гайда",
+        "short": "Как подключить AI-агента к 1С и Битрикс24 и не рисковать данными: четыре разобранных подключения и каталог из 14 инструментов.",
+        "tags": ["1С", "Bitrix24", "MCP", "AI-агенты"]
+      },
+      {
+        "repo": "ladny-interface",
+        "name": "Ладный интерфейс",
+        "when": "2026",
+        "role": "Адаптация навыков дизайн-инженерии",
+        "short": "Русская адаптация навыков анимации и дизайн-инженерии для AI-агентов, с примером для 1С.",
+        "tags": ["анимация", "доступность", "AI-агенты"]
+      },
+      {
+        "repo": "1cProductMap",
+        "name": "Карта продуктов 1С",
+        "when": "2026",
+        "role": "Автор и разработчик",
+        "short": "Подбор комплекта 1С под задачу и размер компании, сборка и расчёт цены по официальному прайсу. Живой сервис.",
+        "tags": ["1С", "JSON Schema", "подбор"],
+        "live": "https://map.product1c.ru/"
+      },
+      {
+        "repo": "Claude_code.-project-crm",
+        "name": "AI Project Executor",
+        "when": "2026",
+        "role": "Продукт и сборка с Claude Code",
+        "short": "Задачи по проектам 1С: генерация уставов, ТЗ и КП в DOCX по расписанию с отправкой в Telegram.",
+        "tags": ["Claude Code", "Telegram", "DOCX"]
+      },
+      {
+        "repo": "task2bitrix24",
+        "name": "Панель над Битрикс24",
+        "when": "2026",
+        "role": "Продукт",
+        "short": "Закрытые часы в Excel, проверка задач перед выставлением счёта, KPI и документы в 1С:УНФ одной кнопкой.",
+        "tags": ["Bitrix24", "1С:УНФ", "KPI"]
+      },
+      {
+        "repo": "ProjectControl",
+        "name": "ProjectControl",
+        "when": "2026",
+        "role": "Продукт, self-hosted",
+        "short": "Рабочее место проектного офиса: портфель проектов, чек-листы, диаграмма Ганта и загрузка специалистов.",
+        "tags": ["PMO", "Ганта", "self-hosted"],
+        "live": "https://projectcrm.ru"
+      }
+    ]
+  }
+}

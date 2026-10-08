@@ -1,0 +1,499 @@
+{
+  "user": "Aleksandr-Litvinenko",
+  "fetchedAt": "2026-10-08T12:34:56.671Z",
+  "count": 28,
+  "repos": [
+    {
+      "name": "GamesIO",
+      "url": "https://github.com/Aleksandr-Litvinenko/GamesIO",
+      "description": "Десять аркад в браузере без сборки и бэкенда: псевдо-3D гонки, змейка, танчики, платформер. Работает офлайн, таблица лидеров через GitHub Issues",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "browser-games",
+        "game-development",
+        "javascript",
+        "prototype"
+      ],
+      "homepage": "https://aleksandr-litvinenko.github.io/GamesIO/",
+      "updatedAt": "2026-10-08T11:24:57Z",
+      "archived": false
+    },
+    {
+      "name": "Aleksandr-Litvinenko",
+      "url": "https://github.com/Aleksandr-Litvinenko/Aleksandr-Litvinenko",
+      "description": "README моего профиля на GitHub",
+      "language": "",
+      "stars": 2,
+      "topics": [
+        "1c",
+        "1c-enterprise",
+        "artificial-intelligence",
+        "automation",
+        "bitrix24",
+        "education",
+        "jira",
+        "mcp",
+        "odata",
+        "open-source",
+        "product-management",
+        "russian"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-28T16:46:48Z",
+      "archived": false
+    },
+    {
+      "name": "pomogator1c",
+      "url": "https://github.com/Aleksandr-Litvinenko/pomogator1c",
+      "description": "ИИ-агент для работы с 1С: вопрос обычными словами, ответ с цифрами в окне 1С. Работает через обработку 1С. Пилот, код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [],
+      "homepage": "https://pomogator1c.ru",
+      "updatedAt": "2026-09-25T05:57:51Z",
+      "archived": false
+    },
+    {
+      "name": "1cProductMap",
+      "url": "https://github.com/Aleksandr-Litvinenko/1cProductMap",
+      "description": "Карта линейки 1С: подбор по задаче и размеру компании, сборка комплекта и расчёт цены по официальному прайсу",
+      "language": "Python",
+      "stars": 4,
+      "topics": [
+        "1c",
+        "1c-enterprise",
+        "decision-support",
+        "json-schema",
+        "product-catalog",
+        "python",
+        "russian"
+      ],
+      "homepage": "https://map.product1c.ru/",
+      "updatedAt": "2026-09-22T10:19:41Z",
+      "archived": false
+    },
+    {
+      "name": "admin-product1c",
+      "url": "https://github.com/Aleksandr-Litvinenko/admin-product1c",
+      "description": "Личная панель для моих сайтов на Jino: доступность, нагрузка сервера, сроки продления и Метрика на одном экране. Здесь описание, код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [],
+      "homepage": "",
+      "updatedAt": "2026-09-21T12:32:21Z",
+      "archived": false
+    },
+    {
+      "name": "brain",
+      "url": "https://github.com/Aleksandr-Litvinenko/brain",
+      "description": "Логическая игра brain без единого слова: три мира, в каждом вход и игра, «?» проходит любой уровень сам. Как сделана и чем проверена, код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [
+        "creative-coding",
+        "game",
+        "generative-art",
+        "landing-page",
+        "reaction-diffusion",
+        "webgl",
+        "webgl2"
+      ],
+      "homepage": "https://brain.product1c.ru",
+      "updatedAt": "2026-09-19T08:05:31Z",
+      "archived": false
+    },
+    {
+      "name": "ladny-interface",
+      "url": "https://github.com/Aleksandr-Litvinenko/ladny-interface",
+      "description": "Русская адаптация emilkowalski/skills: навыки дизайн-инженерии и анимации интерфейсов для AI-агентов, с примером для 1С",
+      "language": "JavaScript",
+      "stars": 7,
+      "topics": [
+        "accessibility",
+        "animation",
+        "codex",
+        "design-engineering",
+        "russian",
+        "skills"
+      ],
+      "homepage": "https://codex.product1c.ru/ladny-interface/",
+      "updatedAt": "2026-10-04T15:13:39Z",
+      "archived": false
+    },
+    {
+      "name": "education1c",
+      "url": "https://github.com/Aleksandr-Litvinenko/education1c",
+      "description": "Открытая программа адаптации стажёров 1С и менеджеров по продажам: треки, практика и критерии оценки",
+      "language": "HTML",
+      "stars": 0,
+      "topics": [
+        "1c",
+        "1c-enterprise",
+        "bsl",
+        "curriculum",
+        "education",
+        "learning",
+        "onboarding",
+        "russian"
+      ],
+      "homepage": "https://edu.product1c.ru/",
+      "updatedAt": "2026-09-15T03:51:27Z",
+      "archived": false
+    },
+    {
+      "name": "qwenGameAI",
+      "url": "https://github.com/Aleksandr-Litvinenko/qwenGameAI",
+      "description": "Заготовка под браузерную игру от Qwen, кода пока нет",
+      "language": "",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "browser-game",
+        "prototype",
+        "qwen"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:38:26Z",
+      "archived": false
+    },
+    {
+      "name": "mini_mobile",
+      "url": "https://github.com/Aleksandr-Litvinenko/mini_mobile",
+      "description": "MOBA на Unity: 1 на 1 по сети или против бота, три мага и арена между вулканами. Играется и в мобильном браузере",
+      "language": "C#",
+      "stars": 1,
+      "topics": [
+        "c-sharp",
+        "game-development",
+        "moba",
+        "prototype",
+        "unity"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:38:22Z",
+      "archived": false
+    },
+    {
+      "name": "neuro_company_claude",
+      "url": "https://github.com/Aleksandr-Litvinenko/neuro_company_claude",
+      "description": "NEUROCORP: компания из ИИ-агентов с CRM и панелью в реальном времени. Человек только согласует проект и КП",
+      "language": "Python",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "claude",
+        "prototype",
+        "python",
+        "simulation"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:38:16Z",
+      "archived": false
+    },
+    {
+      "name": "neuro_company",
+      "url": "https://github.com/Aleksandr-Litvinenko/neuro_company",
+      "description": "Указатель на neuro_company_claude, где лежит код NEUROCORP",
+      "language": "",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "prototype",
+        "simulation"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:38:11Z",
+      "archived": false
+    },
+    {
+      "name": "Codex.-project-crm",
+      "url": "https://github.com/Aleksandr-Litvinenko/Codex.-project-crm",
+      "description": "Спецификация AI Project Executor от Codex, без кода. Реализация того же брифа лежит в Claude_code.-project-crm",
+      "language": "",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "codex",
+        "crm",
+        "prototype"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:38:06Z",
+      "archived": false
+    },
+    {
+      "name": "Claude_code.-project-crm",
+      "url": "https://github.com/Aleksandr-Litvinenko/Claude_code.-project-crm",
+      "description": "AI Project Executor от Claude Code: задачи по проектам 1С, генерация уставов, ТЗ и КП в DOCX по расписанию и отправка в Telegram",
+      "language": "TypeScript",
+      "stars": 2,
+      "topics": [
+        "ai-generated",
+        "claude-code",
+        "crm",
+        "prototype",
+        "typescript"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T17:03:37Z",
+      "archived": false
+    },
+    {
+      "name": "Codex.-Crown-Defender-TD-3D-browser-tower-defense-game",
+      "url": "https://github.com/Aleksandr-Litvinenko/Codex.-Crown-Defender-TD-3D-browser-tower-defense-game",
+      "description": "3D tower defense in the browser, built by Codex from the same brief as the Claude Code version",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "browser-game",
+        "codex",
+        "prototype",
+        "tower-defense"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:37:56Z",
+      "archived": false
+    },
+    {
+      "name": "Claude-code.-Crown-Defender-TD-3D-browser-tower-defense-game",
+      "url": "https://github.com/Aleksandr-Litvinenko/Claude-code.-Crown-Defender-TD-3D-browser-tower-defense-game",
+      "description": "3D tower defense in the browser, built by Claude Code from the same brief as the Codex version",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "ai-generated",
+        "browser-game",
+        "claude-code",
+        "prototype",
+        "tower-defense"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:37:50Z",
+      "archived": false
+    },
+    {
+      "name": "GeneratedGamesIO",
+      "url": "https://github.com/Aleksandr-Litvinenko/GeneratedGamesIO",
+      "description": "Eight mobile-first offline browser games in one installable PWA",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "browser-games",
+        "canvas",
+        "game-development",
+        "javascript",
+        "mobile-first",
+        "offline-first",
+        "pwa"
+      ],
+      "homepage": "https://aleksandr-litvinenko.github.io/GeneratedGamesIO/",
+      "updatedAt": "2026-09-15T03:37:46Z",
+      "archived": false
+    },
+    {
+      "name": "ProjectControl",
+      "url": "https://github.com/Aleksandr-Litvinenko/ProjectControl",
+      "description": "Рабочее место проектного офиса: портфель проектов, обязательные чек-листы, диаграмма Ганта и загрузка специалистов. Разворачивается на своём сервере",
+      "language": "TypeScript",
+      "stars": 1,
+      "topics": [
+        "docker",
+        "gantt-chart",
+        "pmo",
+        "postgresql",
+        "project-management",
+        "react",
+        "self-hosted",
+        "typescript"
+      ],
+      "homepage": "https://projectcrm.ru",
+      "updatedAt": "2026-09-15T03:37:40Z",
+      "archived": false
+    },
+    {
+      "name": "product1c-new",
+      "url": "https://github.com/Aleksandr-Litvinenko/product1c-new",
+      "description": "Как сделан 3D-сайт new.product1c.ru: одна сцена из частиц на Three.js меняет форму при прокрутке. Код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [],
+      "homepage": "https://new.product1c.ru/",
+      "updatedAt": "2026-09-15T03:37:20Z",
+      "archived": false
+    },
+    {
+      "name": "beautydesign",
+      "url": "https://github.com/Aleksandr-Litvinenko/beautydesign",
+      "description": "Как сделан сайт студии Product1C: тёмный хромированный дизайн, WebGL-эффект глубины и проверки в браузере. Код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [
+        "1c",
+        "landing-page",
+        "portfolio",
+        "react",
+        "threejs",
+        "webgl"
+      ],
+      "homepage": "https://beautydesign.product1c.ru",
+      "updatedAt": "2026-09-15T03:37:09Z",
+      "archived": false
+    },
+    {
+      "name": "cbrain",
+      "url": "https://github.com/Aleksandr-Litvinenko/cbrain",
+      "description": "Сайт ИТ-стартапа cBrain: рой из 110 000 частиц на WebGL2 меняет форму при прокрутке. Как сделан и чем проверен, код закрыт",
+      "language": "",
+      "stars": 0,
+      "topics": [
+        "creative-coding",
+        "landing-page",
+        "particles",
+        "portfolio",
+        "webgl",
+        "webgl2"
+      ],
+      "homepage": "https://cbrain.product1c.ru",
+      "updatedAt": "2026-09-15T03:36:58Z",
+      "archived": false
+    },
+    {
+      "name": "ladno",
+      "url": "https://github.com/Aleksandr-Litvinenko/ladno",
+      "description": "Демо управленческого учёта в браузере: счета, склад, P&L и платёжный календарь. Данные хранятся локально, модель подготовлена к импорту из 1С по OData",
+      "language": "JavaScript",
+      "stars": 0,
+      "topics": [
+        "finance",
+        "inventory",
+        "odata",
+        "onec",
+        "russian"
+      ],
+      "homepage": "https://ladno.product1c.ru",
+      "updatedAt": "2026-09-15T03:36:54Z",
+      "archived": false
+    },
+    {
+      "name": "ondal",
+      "url": "https://github.com/Aleksandr-Litvinenko/ondal",
+      "description": "Управленческий учёт для небольшой компании: счета с согласованием, склад, P&L, ДДС и платёжный календарь. Выгрузка в 1С по OData",
+      "language": "TypeScript",
+      "stars": 0,
+      "topics": [
+        "1c",
+        "accounting",
+        "cashflow",
+        "erp",
+        "odata",
+        "postgresql",
+        "russian",
+        "typescript"
+      ],
+      "homepage": "https://ondal.product1c.ru",
+      "updatedAt": "2026-09-15T03:36:49Z",
+      "archived": false
+    },
+    {
+      "name": "agent-skills-ru",
+      "url": "https://github.com/Aleksandr-Litvinenko/agent-skills-ru",
+      "description": "Русский перевод addyosmani/agent-skills: 24 скилла, по которым AI-агент ведёт разработку от спеки до релиза",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "agent-skills",
+        "ai-agents",
+        "claude-code",
+        "codex",
+        "cursor",
+        "prompt-engineering",
+        "russian",
+        "skills"
+      ],
+      "homepage": "https://claude.product1c.ru",
+      "updatedAt": "2026-09-15T03:36:37Z",
+      "archived": false
+    },
+    {
+      "name": "1c-ai-guide",
+      "url": "https://github.com/Aleksandr-Litvinenko/1c-ai-guide",
+      "description": "Как подключить AI-агента к 1С и Bitrix24, не рискуя данными: четыре разобранных подключения и каталог из 14 инструментов с пометкой, что проверено",
+      "language": "Python",
+      "stars": 12,
+      "topics": [
+        "1c",
+        "1c-enterprise",
+        "agent-skills",
+        "ai-agents",
+        "artificial-intelligence",
+        "awesome-list",
+        "bitrix24",
+        "bsl",
+        "claude-code",
+        "integration",
+        "jira",
+        "llm",
+        "mcp",
+        "model-context-protocol",
+        "odata",
+        "rest-api",
+        "russian",
+        "webhook"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:36:33Z",
+      "archived": false
+    },
+    {
+      "name": "task2bitrix24",
+      "url": "https://github.com/Aleksandr-Litvinenko/task2bitrix24",
+      "description": "Панель над Битрикс24 и 1С:УНФ: закрытые часы в Excel, проверка задач перед выставлением счёта, KPI и документы в УНФ одной кнопкой",
+      "language": "PHP",
+      "stars": 2,
+      "topics": [
+        "1c-enterprise",
+        "bitrix24",
+        "business-automation",
+        "excel",
+        "odata",
+        "php",
+        "reporting",
+        "task-management"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:28:34Z",
+      "archived": false
+    },
+    {
+      "name": "OutpostSiegeTD",
+      "url": "https://github.com/Aleksandr-Litvinenko/OutpostSiegeTD",
+      "description": "Tower defense в браузере на чистом JS: 20 осад по 20 волн, боссы, прокачка башен и деревня с экономикой",
+      "language": "JavaScript",
+      "stars": 1,
+      "topics": [
+        "browser-game",
+        "canvas",
+        "game-development",
+        "javascript",
+        "tower-defense",
+        "vanilla-js"
+      ],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:28:14Z",
+      "archived": false
+    },
+    {
+      "name": "qwenGame",
+      "url": "https://github.com/Aleksandr-Litvinenko/qwenGame",
+      "description": "Пустой репозиторий под эксперимент с Qwen",
+      "language": "",
+      "stars": 1,
+      "topics": [],
+      "homepage": "",
+      "updatedAt": "2026-09-15T03:28:32Z",
+      "archived": false
+    }
+  ]
+}
