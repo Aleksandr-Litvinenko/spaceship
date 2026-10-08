@@ -24,20 +24,22 @@ echo "→ сборка"
 node scripts/build.mjs
 
 echo "→ конфиг nginx"
-if ! ssh_run "test -f /etc/nginx/sites-available/${DOMAIN}"; then
+LOCAL_SUM="$(shasum -a 256 deploy/nginx-spaceship.conf | cut -d' ' -f1)"
+REMOTE_SUM="$(ssh_run "sha256sum /etc/nginx/sites-available/${DOMAIN} 2>/dev/null | cut -d' ' -f1" || true)"
+if [ "$LOCAL_SUM" != "$REMOTE_SUM" ]; then
   scp -i "$KEY" -P "$PORT" "${SSH_OPTS[@]:4}" \
     deploy/nginx-spaceship.conf "root@${HOST}:/etc/nginx/sites-available/${DOMAIN}"
-  ssh_run "ln -sf /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN} && nginx -t && systemctl reload nginx"
-  echo "  конфиг установлен"
+  ssh_run "ln -sfn /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/${DOMAIN} && nginx -t && systemctl reload nginx"
+  echo "  конфиг обновлён и перечитан"
 else
-  echo "  конфиг уже стоит"
+  echo "  конфиг без изменений"
 fi
 
 echo "→ заливка во временный каталог"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 ssh_run "rm -rf ${REMOTE_DIR}.new && mkdir -p ${REMOTE_DIR}.new"
 # COPYFILE_DISABLE — чтобы macOS не добавлял файлы ._* в архив
-COPYFILE_DISABLE=1 tar -C dist -czf - . | ssh "${SSH_OPTS[@]}" "root@${HOST}" "tar -xzf - -C ${REMOTE_DIR}.new"
+COPYFILE_DISABLE=1 tar --no-xattrs -C dist -czf - . | ssh "${SSH_OPTS[@]}" "root@${HOST}" "tar -xzf - -C ${REMOTE_DIR}.new"
 
 echo "→ подмена каталога (старый уходит в бэкап)"
 ssh_run "mkdir -p /root/backups && if [ -d ${REMOTE_DIR} ]; then mv ${REMOTE_DIR} /root/backups/${DOMAIN}-${STAMP}; fi && mv ${REMOTE_DIR}.new ${REMOTE_DIR} && nginx -t && systemctl reload nginx"
