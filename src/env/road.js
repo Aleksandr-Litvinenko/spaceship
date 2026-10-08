@@ -68,9 +68,15 @@ function signTexture(title, sub, color) {
     ctx.fillStyle = color;
     ctx.font = '600 34px Manrope, system-ui, sans-serif';
     ctx.fillText(sub.toUpperCase().slice(0, 40), 56, 96);
+    // Длинное название уменьшаем, чтобы оно влезло в табличку целиком
+    let size = 76;
     ctx.fillStyle = '#ffffff';
-    ctx.font = '800 76px Unbounded, Manrope, system-ui, sans-serif';
-    ctx.fillText(title.slice(0, 26), 56, 210);
+    ctx.font = `800 ${size}px Unbounded, Manrope, system-ui, sans-serif`;
+    while (ctx.measureText(title).width > 900 && size > 34) {
+      size -= 3;
+      ctx.font = `800 ${size}px Unbounded, Manrope, system-ui, sans-serif`;
+    }
+    ctx.fillText(title, 56, 210);
     tex.needsUpdate = true;
   };
   draw();
