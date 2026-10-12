@@ -1,6 +1,6 @@
 // Космический истребитель: длинный обтекаемый корпус, дельта-крылья, неоновое кольцо и два сопла.
 import * as THREE from '../three.js';
-import { hull, dark, glass, neon, lathe, flare, result } from './shared.js';
+import { hull, dark, carbon, glass, neon, lathe, flare, result } from './shared.js';
 
 function build(accent) {
   const group = new THREE.Group();
@@ -16,7 +16,7 @@ function build(accent) {
   delta.closePath();
   const deltaGeo = new THREE.ExtrudeGeometry(delta, { depth: 0.16, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 1 });
   deltaGeo.rotateX(-Math.PI / 2);
-  const wingR = new THREE.Mesh(deltaGeo, dark(0x23293f));
+  const wingR = new THREE.Mesh(deltaGeo, carbon(0x23293f));
   wingR.position.y = -0.2;
   const wingL = wingR.clone();
   wingL.scale.x = -1;
@@ -51,7 +51,7 @@ function build(accent) {
   });
 
   const glows = nozzles.map((n) => {
-    const sp = flare(accent, 4.4);
+    const sp = flare(accent, 3.2);
     sp.position.copy(n).add(new THREE.Vector3(0, 0, 1.6));
     group.add(sp);
     return sp;
@@ -66,8 +66,8 @@ function build(accent) {
     update(dt, t, S) {
       const power = Math.min(1, S.speed / 90);
       glows.forEach((g, i) => {
-        g.material.opacity = (0.6 + 0.3 * Math.sin(t * 40 + i)) * (0.35 + 0.65 * power);
-        g.scale.setScalar(3.4 + 2.6 * power + Math.sin(t * 33 + i) * 0.3);
+        g.material.opacity = (0.16 + 0.06 * Math.sin(t * 40 + i)) * (0.35 + 0.65 * power);
+        g.scale.setScalar(2.2 + 1.6 * power + Math.sin(t * 33 + i) * 0.2);
       });
       beacon.visible = Math.sin(t * 6) > 0;
       ring.rotation.z = t * 0.6;

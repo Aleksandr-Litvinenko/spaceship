@@ -1,104 +1,282 @@
-// Процедурная графика: поверхности, кольца, свечение, небо и неоновые шейдеры. Без внешних ассетов.
+// Графика: поверхности планет, облака, вода, асфальт, краска, туманности, атмосфера, солнце, портал.
+// Почти всё запекается на GPU (см. bake.js) — без внешних ассетов, но с физическими картами
+// (альбедо, нормали, шероховатость), поэтому свет и отражения ведут себя как у настоящих материалов.
 import * as THREE from '../three.js';
-import { TAU, clamp, lerp, smooth } from './util.js';
+import { bake, normalFromHeight, GLSL_NOISE } from './bake.js';
+import { clamp, smooth } from './util.js';
 
-// ---------- Шум ----------
-// Value noise: целочисленная решётка + хеш. Семплируем по поверхности сферы → бесшовная текстура.
-function hash(x, y, z, s) {
-  let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 1442695041) ^ Math.imul(s, 2246822519);
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967295;
-}
-export function vnoise(x, y, z, s) {
-  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
-  const xf = x - xi, yf = y - yi, zf = z - zi;
-  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf), w = zf * zf * (3 - 2 * zf);
-  const n = (a, b, c) => hash(a, b, c, s);
-  const x00 = lerp(n(xi, yi, zi), n(xi + 1, yi, zi), u);
-  const x10 = lerp(n(xi, yi + 1, zi), n(xi + 1, yi + 1, zi), u);
-  const x01 = lerp(n(xi, yi, zi + 1), n(xi + 1, yi, zi + 1), u);
-  const x11 = lerp(n(xi, yi + 1, zi + 1), n(xi + 1, yi + 1, zi + 1), u);
-  return lerp(lerp(x00, x10, v), lerp(x01, x11, v), w);
-}
-export function fbm(x, y, z, oct, s) {
-  let sum = 0, amp = 0.5, norm = 0;
-  for (let i = 0; i < oct; i++) {
-    sum += amp * vnoise(x, y, z, s + i * 17);
-    norm += amp;
-    x *= 2.03; y *= 2.03; z *= 2.03;
-    amp *= 0.5;
-  }
-  return sum / norm;
-}
+// ---------- Палитры ----------
+// Цвета в линейном пространстве: THREE.Color сам переводит hex из sRGB
+const lin = (hex) => new THREE.Color(hex);
 
-// ---------- Цвет ----------
-export const hexRGB = (hex) => {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-};
-// Палитра: опорные цвета, t ∈ [0,1] интерполируется между ними
-function ramp(pal, t) {
-  const f = clamp(t, 0, 0.9999) * (pal.length - 1);
-  const i = Math.floor(f), k = f - i;
-  const a = pal[i], b = pal[i + 1];
-  return [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
-}
+// Внутренние помощники: общая функция ramp по четырём линейным цветам
+const RAMP = `
+  uniform vec3 uC0, uC1, uC2, uC3;
+  vec3 ramp(float t) {
+    t = clamp(t, 0.0, 0.9999) * 3.0;
+    if (t < 1.0) return mix(uC0, uC1, t);
+    if (t < 2.0) return mix(uC1, uC2, t - 1.0);
+    return mix(uC2, uC3, t - 2.0);
+  }`;
 
-// ---------- Поверхности ----------
-// kind: bands (газовый гигант) | terrain (суша/океан/пустыня) | ice | lava
-export function planetTexture(look, seed) {
-  const W = 512, H = 256;
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  const img = ctx.createImageData(W, H);
-  const d = img.data;
-  const pal = look.palette.map(hexRGB);
-
-  for (let y = 0; y < H; y++) {
-    const lat = (y / (H - 1) - 0.5) * Math.PI;
-    const cl = Math.cos(lat), sl = Math.sin(lat);
-    for (let x = 0; x < W; x++) {
-      const lon = (x / W) * TAU;
-      const px = cl * Math.cos(lon), py = sl, pz = cl * Math.sin(lon);
-      let c;
-      if (look.kind === 'bands') {
-        const w = fbm(px * 2, py * 2, pz * 2, 4, seed);
-        const band = 0.5 + 0.5 * Math.sin(lat * 8 + w * 5);
-        c = ramp(pal, clamp(band * 0.75 + w * 0.45, 0, 1));
-      } else if (look.kind === 'lava') {
-        const w = fbm(px * 3.2, py * 3.2, pz * 3.2, 5, seed);
-        const crack = 1 - smooth(0.0, 0.07, Math.abs(w - 0.5));
-        c = ramp(pal, clamp(crack * 0.95 + w * 0.12, 0, 1));
-      } else if (look.kind === 'ice') {
-        const w = fbm(px * 2.6, py * 2.6, pz * 2.6, 5, seed);
-        const crack = 1 - smooth(0.0, 0.03, Math.abs(w - 0.5));
-        c = ramp(pal, clamp(0.5 + (w - 0.5) * 0.9 - crack * 0.55, 0, 1));
-      } else {
-        const h = fbm(px * 2, py * 2, pz * 2, 6, seed);
-        if (look.ocean) {
-          const landMix = smooth(0.49, 0.53, h);
-          const sea = ramp(pal, clamp(0.08 + h * 0.5, 0, 0.42));
-          const land = ramp(pal, clamp(0.58 + (h - 0.5) * 1.6, 0.58, 1));
-          const cloud = smooth(0.54, 0.72, fbm(px * 3 + 9, py * 3, pz * 3, 4, seed + 5)) * 0.85;
-          const base = [lerp(sea[0], land[0], landMix), lerp(sea[1], land[1], landMix), lerp(sea[2], land[2], landMix)];
-          c = [lerp(base[0], 240, cloud), lerp(base[1], 246, cloud), lerp(base[2], 255, cloud)];
-        } else {
-          const ridge = 1 - Math.abs(fbm(px * 4, py * 4, pz * 4, 4, seed + 3) - 0.5) * 2;
-          c = ramp(pal, clamp(0.15 + h * 0.9 + ridge * 0.15, 0, 1));
-        }
-      }
-      const i = (y * W + x) * 4;
-      d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255;
+// Поверхность планеты: альбедо в rgb, рельеф в a. kind: 0 газовый гигант, 1 суша, 2 океан, 3 лёд, 4 лава, 5 камень
+const SURFACE = `
+  uniform float uKind, uSeed, uBands;
+  ${RAMP}
+  void main() {
+    vec3 d = sphDir(vUv);
+    vec3 sd = d + vec3(uSeed);
+    vec3 col = vec3(0.5);
+    float h = 0.5;
+    if (uKind < 0.5) {
+      // Газовый гигант: зональные полосы, закрученные турбулентностью
+      float lat = (vUv.y - 0.5) * 3.14159;
+      float w = warpFbm(sd * 1.6, 5);
+      float bands = 0.5 + 0.5 * sin(lat * uBands + w * 5.0);
+      float turb = fbm(sd * 7.0 + vec3(bands * 1.5, 0.0, 0.0), 5);
+      // Тона ближе друг к другу и смешаны с турбулентностью: газ, а не полосатый арбуз
+      float t = clamp(0.42 + (bands - 0.5) * 0.45 + (turb - 0.5) * 0.7, 0.0, 1.0);
+      col = ramp(t) * (0.9 + 0.18 * turb);
+      float storm = smoothstep(0.62, 0.75, fbm(sd * vec3(3.0, 9.0, 3.0), 4)) * smoothstep(0.7, 0.2, abs(lat));
+      col = mix(col, uC3, storm * 0.35);
+      h = 0.5 + 0.12 * (turb - 0.5) + 0.08 * (bands - 0.5);
+    } else if (uKind < 1.5) {
+      // Суша: горы — гребни, равнины — мягкие переходы, пыль поверх
+      float base = warpFbm(sd * 2.1, 6);
+      float ridge = 1.0 - abs(fbm(sd * 4.5, 5) * 2.0 - 1.0);
+      h = clamp(base * 0.8 + ridge * ridge * 0.35, 0.0, 1.0);
+      col = ramp(h * 1.05);
+      col *= 0.82 + 0.36 * fbm(sd * 22.0, 3);
+    } else if (uKind < 2.5) {
+      // Океан: глубина по шуму, суша с горами, береговая линия
+      float h0 = warpFbm(sd * 1.9, 6);
+      float land = smoothstep(0.5, 0.515, h0);
+      float depth = clamp((0.515 - h0) * 5.0, 0.0, 1.0);
+      vec3 sea = mix(uC2, uC0, depth);
+      float hl = clamp((h0 - 0.515) * 2.4, 0.0, 1.0);
+      vec3 landC = mix(uC1, uC3, hl * hl);
+      col = mix(sea, landC, land);
+      col *= 0.9 + 0.2 * fbm(sd * 16.0, 3) * (1.0 - land * 0.5);
+      h = mix(0.46, 0.52 + hl * 0.2, land);
+    } else if (uKind < 3.5) {
+      // Лёд: трещины по ячейкам Вороного, мутный голубой лёд
+      vec2 w = worley(sd * 4.5);
+      float crack = smoothstep(0.0, 0.07, w.y - w.x);
+      float base = warpFbm(sd * 2.5, 5);
+      col = mix(uC0, mix(uC1, uC2, base), crack);
+      col = mix(col, uC3, smoothstep(0.55, 0.8, base) * 0.5);
+      h = crack * 0.6 + base * 0.2;
+    } else if (uKind < 4.5) {
+      // Лава: тёмная порода и светящиеся трещины
+      vec2 w = worley(sd * 5.0);
+      float edge = 1.0 - smoothstep(0.0, 0.06, w.y - w.x);
+      float n = fbm(sd * 5.0, 5);
+      vec3 rock = mix(uC0, uC1, n);
+      col = mix(rock, uC3, edge * (0.6 + 0.4 * n));
+      col += uC2 * edge * 0.5;
+      h = 0.5 - edge * 0.35 + n * 0.15;
+    } else {
+      // Камень: кратеры разной глубины на шероховатой поверхности
+      vec2 w = worley(sd * 5.5);
+      float bowl = 1.0 - smoothstep(0.0, 0.42, w.x);
+      float rim = smoothstep(0.42, 0.5, w.x) * (1.0 - smoothstep(0.5, 0.7, w.x));
+      float n = warpFbm(sd * 3.6, 6);
+      h = clamp(0.5 + (n - 0.5) * 0.5 - bowl * 0.3 + rim * 0.12, 0.0, 1.0);
+      col = ramp(n * 0.7 + 0.15) * (0.85 + 0.3 * h);
     }
-  }
-  ctx.putImageData(img, 0, 0);
-  return srgbTexture(cv, 4);
+    gl_FragColor = vec4(col, clamp(h, 0.0, 1.0));
+  }`;
+
+// Облака: плотность в зелёном канале (так читает alphaMap)
+const CLOUDS = `
+  uniform float uSeed, uCover;
+  void main() {
+    vec3 d = sphDir(vUv) + vec3(uSeed);
+    float n = warpFbm(d * 2.6, 6);
+    float dens = smoothstep(uCover, uCover + 0.22, n);
+    gl_FragColor = vec4(vec3(dens), 1.0); // alphaMap читает зелёный канал
+  }`;
+
+// Волны на воде: карта нормалей в касательном пространстве
+const WATER_NORMALS = `
+  void main() {
+    vec2 p = vUv * 9.0;
+    float e = 0.004;
+    float h0 = fbm(vec3(p, 0.0), 5) + 0.25 * sin(p.x * 3.1 + p.y * 1.7) + 0.15 * sin(p.x * -2.3 + p.y * 3.7);
+    float hx = fbm(vec3(p + vec2(e * 9.0, 0.0), 0.0), 5) + 0.25 * sin((p.x + e * 9.0) * 3.1 + p.y * 1.7) + 0.15 * sin((p.x + e * 9.0) * -2.3 + p.y * 3.7);
+    float hy = fbm(vec3(p + vec2(0.0, e * 9.0), 0.0), 5) + 0.25 * sin(p.x * 3.1 + (p.y + e * 9.0) * 1.7) + 0.15 * sin(p.x * -2.3 + (p.y + e * 9.0) * 3.7);
+    vec3 n = normalize(vec3((h0 - hx) * 18.0, (h0 - hy) * 18.0, 1.0));
+    gl_FragColor = vec4(n * 0.5 + 0.5, 1.0);
+  }`;
+
+// Асфальт: мелкое зерно и микротрещины; высота уходит в альфу
+const ASPHALT = `
+  void main() {
+    vec2 p = vUv * 48.0;
+    float grain = vnoise(vec3(p, 0.0)) * 0.6 + vnoise(vec3(p * 3.7, 1.0)) * 0.3 + vnoise(vec3(p * 11.0, 2.0)) * 0.1;
+    vec2 w = worley(vec3(p * 0.5, 0.0));
+    float crack = 1.0 - smoothstep(0.0, 0.05, w.y - w.x);
+    float h = grain - crack * 0.35;
+    gl_FragColor = vec4(vec3(0.5 + 0.5 * (grain - 0.5)), clamp(h * 0.5 + 0.5, 0.0, 1.0));
+  }`;
+
+// Неоновая сетка: линии с мягким свечением, остальное — почти чёрное; идёт в emissiveMap
+const NEON_GRID = `
+  uniform vec3 uLine;
+  void main() {
+    vec2 g = vUv * 16.0;
+    vec2 f = abs(fract(g) - 0.5);
+    float edge = 0.5 - max(f.x, f.y);
+    float line = 1.0 - smoothstep(0.0, 0.035, edge); // линия там, где край клетки
+    float glowL = exp(-edge * 40.0) * 0.4;
+    gl_FragColor = vec4(uLine * (line + glowL), 1.0);
+  }`;
+
+// Панели корпуса: швы, заклёпки, мелкие царапины — карта нормалей для металла
+const PANELS = `
+  uniform float uScale;
+  void main() {
+    vec2 p = vUv * uScale;
+    vec2 f = abs(fract(p) - 0.5);
+    float seam = 1.0 - smoothstep(0.0, 0.02, 0.5 - max(f.x, f.y));
+    vec2 cell = floor(p);
+    float rivet = smoothstep(0.08, 0.05, length(fract(p) - 0.5 - vec2(0.36, 0.36)));
+    float scratch = vnoise(vec3(p * 9.0, 4.0)) * 0.15;
+    float h = 0.5 - seam * 0.25 + rivet * 0.12 + scratch * 0.05;
+    gl_FragColor = vec4(vec3(h), clamp(h, 0.0, 1.0));
+  }`;
+
+// Карбон/хекс для корабля
+const HEX = `
+  void main() {
+    vec2 p = vUv * 60.0;
+    vec2 r = vec2(1.0, 1.732);
+    vec2 h = r * 0.5;
+    vec2 a = mod(p, r) - h;
+    vec2 b = mod(p - h, r) - h;
+    vec2 g = dot(a, a) < dot(b, b) ? a : b;
+    float edge = smoothstep(0.42, 0.5, max(abs(g.x), abs(g.y * 0.6 + abs(g.x) * 0.35)));
+    float hgt = 0.5 + (1.0 - edge) * 0.12;
+    gl_FragColor = vec4(vec3(hgt), clamp(hgt, 0.0, 1.0));
+  }`;
+
+// Чешуйки лака: блики от частиц металлика
+const FLAKE = `
+  void main() {
+    vec3 p = vec3(vUv * 320.0, 0.0);
+    float f = h31(floor(p));
+    float s = step(0.965, f) * (0.5 + 0.5 * h31(floor(p) + 7.0));
+    float h = 0.5 + (vnoise(p * 0.2) - 0.5) * 0.04 + s * 0.2;
+    gl_FragColor = vec4(vec3(h), clamp(h, 0.0, 1.0));
+  }`;
+
+// Туманность: сплетения шума, цвет от двух тонов, плотность в альфе
+const NEBULA = `
+  uniform vec3 uA, uB, uC;
+  uniform float uSeed;
+  void main() {
+    vec3 p = vec3((vUv - 0.5) * 3.2, uSeed);
+    float n = warpFbm(p, 6);
+    float m = warpFbm(p * 1.7 + 4.0, 5);
+    float dens = smoothstep(0.35, 0.85, n) * (1.0 - smoothstep(0.55, 0.5 + 0.5, length(vUv - 0.5) * 2.0));
+    vec3 col = mix(uA, uB, smoothstep(0.4, 0.8, m));
+    col = mix(col, uC, smoothstep(0.6, 0.9, n) * 0.6);
+    gl_FragColor = vec4(col, dens);
+  }`;
+
+// ---------- Публичные функции ----------
+
+// Поверхность планеты: альбедо + рельеф (в альфе) и карта нормалей из рельефа
+export function planetMaps(renderer, look, seed, size = 1024) {
+  const kindIndex = { bands: 0, terrain: 1, ocean: 2, ice: 3, lava: 4, rock: 5 }[look.kind] ?? 1;
+  const kind = look.ocean ? 2 : kindIndex;
+  const pal = look.palette.map(lin);
+  const albedo = bake(renderer, {
+    width: size, height: size / 2, mipmaps: true,
+    uniforms: {
+      uKind: { value: kind }, uSeed: { value: seed * 0.37 }, uBands: { value: 15 + (seed % 5) },
+      uC0: { value: pal[0] }, uC1: { value: pal[1] }, uC2: { value: pal[2] }, uC3: { value: pal[3] }
+    },
+    fragment: SURFACE
+  });
+  const normal = normalFromHeight(renderer, albedo, { strength: kind === 0 ? 1.2 : 3.2, width: size, height: size / 2 });
+  return { map: albedo, normalMap: normal };
 }
 
-// Кольца: радиальная текстура. RingGeometry даёт планарные UV, поэтому круг рисуем сами;
-// внутренний край кольца соответствует радиусу 0.617 от внешнего.
+// Облачный слой: плотность облаков в альфе/зелёном канале
+export function cloudMap(renderer, seed, cover = 0.48, size = 512) {
+  return bake(renderer, {
+    width: size, height: size / 2, mipmaps: true,
+    uniforms: { uSeed: { value: seed }, uCover: { value: cover } },
+    fragment: CLOUDS
+  });
+}
+
+// Облако-спрайт: мягкий силуэт с шумом; цвет белый, плотность в альфе. Для неба на закате.
+const CLOUD_SPRITE = `
+  uniform float uSeed;
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0;
+    float r = length(p * vec2(1.0, 1.6));
+    float n = warpFbm(vec3(p * 2.2, uSeed), 5);
+    float shape = (1.0 - smoothstep(0.35, 1.0, r)) * smoothstep(0.25, 0.7, n + 0.25 - r * 0.25);
+    gl_FragColor = vec4(vec3(0.95 + 0.05 * n), clamp(shape, 0.0, 1.0));
+  }`;
+export function cloudSpriteTexture(renderer, seed, size = 256) {
+  return bake(renderer, { width: size, height: size, mipmaps: true, uniforms: { uSeed: { value: seed } }, fragment: CLOUD_SPRITE });
+}
+
+// Карта нормалей для воды (Water addon)
+export function waterNormals(renderer, size = 512) {
+  return bake(renderer, { width: size, height: size, type: THREE.UnsignedByteType, mipmaps: true, fragment: WATER_NORMALS });
+}
+
+// Асфальт: альбедо и нормали (шероховатость задаётся константой материала)
+export function asphaltMaps(renderer, size = 512) {
+  const h = bake(renderer, { width: size, height: size, mipmaps: true, fragment: ASPHALT });
+  const normal = normalFromHeight(renderer, h, { strength: 2.5, width: size, height: size });
+  return { map: null, normalMap: normal };
+}
+
+// Неоновая сетка для земли: излучающая карта (emissive) и тусклый базовый цвет
+export function neonGridMap(renderer, lineHex = 0xff5fd2, size = 512) {
+  return bake(renderer, {
+    width: size, height: size, mipmaps: true,
+    uniforms: { uLine: { value: lin(lineHex) } },
+    fragment: NEON_GRID
+  });
+}
+
+// Панели корпуса: нормали для металла, масштаб — сколько панелей на единицу UV
+export function panelNormal(renderer, scale = 8, size = 512) {
+  const h = bake(renderer, { width: size, height: size, mipmaps: true, uniforms: { uScale: { value: scale } }, fragment: PANELS });
+  return normalFromHeight(renderer, h, { strength: 3.0, width: size, height: size });
+}
+
+export function hexNormal(renderer, size = 512) {
+  const h = bake(renderer, { width: size, height: size, mipmaps: true, fragment: HEX });
+  return normalFromHeight(renderer, h, { strength: 2.0, width: size, height: size });
+}
+
+// Флейк-лак для автомобиля: мелкие блики по всей поверхности
+export function flakeNormal(renderer, size = 512) {
+  const h = bake(renderer, { width: size, height: size, mipmaps: true, fragment: FLAKE });
+  return normalFromHeight(renderer, h, { strength: 1.5, width: size, height: size });
+}
+
+// Туманность: цветное облако с прозрачностью — для спрайтов
+export function nebulaTexture(renderer, colors, seed, size = 512) {
+  return bake(renderer, {
+    width: size, height: size, mipmaps: true,
+    uniforms: {
+      uA: { value: lin(colors[0]) }, uB: { value: lin(colors[1]) }, uC: { value: lin(colors[2] ?? colors[0]) },
+      uSeed: { value: seed }
+    },
+    fragment: NEBULA
+  });
+}
+
+// Кольца: радиальная текстура (CPU, она маленькая). Внутренний край соответствует радиусу 0.617.
 export function ringTexture(palette, seed) {
   const S = 512, R = S / 2;
   const cv = document.createElement('canvas');
@@ -106,7 +284,10 @@ export function ringTexture(palette, seed) {
   const ctx = cv.getContext('2d');
   const img = ctx.createImageData(S, S);
   const d = img.data;
-  const pal = palette.map(hexRGB);
+  const pal = palette.map((hex) => {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  });
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
       const dx = (x - R) / R, dy = (y - R) / R;
@@ -114,39 +295,24 @@ export function ringTexture(palette, seed) {
       const f = (dist - 0.617) / 0.383;
       const i = (y * S + x) * 4;
       if (f < 0 || f > 1) { d[i + 3] = 0; continue; }
-      const n = vnoise(f * 60, 0.5, 0.5, seed);
-      const a = (0.15 + 0.55 * n) * smooth(0.0, 0.06, f) * (1 - smooth(0.86, 1.0, f));
-      const c = ramp(pal, n);
-      d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = a * 255;
+      const n = 0.5 + 0.5 * Math.sin(f * 90 + seed) * Math.sin(f * 23 + seed * 0.7);
+      const a = (0.2 + 0.6 * n) * smooth(0.0, 0.06, f) * (1 - smooth(0.86, 1.0, f));
+      const k = clamp(n, 0, 0.999) * (pal.length - 1);
+      const c0 = pal[Math.floor(k)], c1 = pal[Math.min(Math.floor(k) + 1, pal.length - 1)];
+      const t = k - Math.floor(k);
+      d[i] = c0[0] + (c1[0] - c0[0]) * t;
+      d[i + 1] = c0[1] + (c1[1] - c0[1]) * t;
+      d[i + 2] = c0[2] + (c1[2] - c0[2]) * t;
+      d[i + 3] = a * 255;
     }
   }
   ctx.putImageData(img, 0, 0);
-  return srgbTexture(cv, 1);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
-// Облако: мягкое пятно с шумом, для небесных спрайтов
-export function cloudTexture(seed) {
-  const S = 256;
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = S;
-  const ctx = cv.getContext('2d');
-  const img = ctx.createImageData(S, S);
-  const d = img.data;
-  for (let y = 0; y < S; y++) {
-    for (let x = 0; x < S; x++) {
-      const dx = (x / S - 0.5) * 2, dy = (y / S - 0.5) * 2;
-      const r = Math.sqrt(dx * dx + dy * dy);
-      const n = fbm(x / 40, y / 40, 0.3, 4, seed);
-      const a = clamp((1 - r) * 1.6 + (n - 0.5) * 1.1, 0, 1) * (1 - smooth(0.8, 1, r));
-      const i = (y * S + x) * 4;
-      d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; d[i + 3] = a * 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-  return srgbTexture(cv, 1);
-}
-
-// Радиальный градиент: спрайты свечения, туманности, блики
+// Радиальный градиент: спрайты свечения
 export function radialTexture(stops, size = 256) {
   const cv = document.createElement('canvas');
   cv.width = cv.height = size;
@@ -155,7 +321,9 @@ export function radialTexture(stops, size = 256) {
   stops.forEach(([o, c]) => g.addColorStop(o, c));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
-  return srgbTexture(cv, 1);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 let glowTex = null;
@@ -171,32 +339,66 @@ export function glow() {
   return glowTex;
 }
 
-function srgbTexture(canvas, anisotropy) {
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = anisotropy;
-  return tex;
+// Звезда с дифракционными лучами: яркие звёзды выглядят как у камеры, а не как точки
+let starTex = null;
+export function starSpikeTexture() {
+  if (starTex) return starTex;
+  const S = 256;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.08, 'rgba(255,255,255,0.9)');
+  g.addColorStop(0.3, 'rgba(255,255,255,0.12)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  // Два луча: горизонтальный и вертикальный, затухают к краям
+  ctx.globalCompositeOperation = 'lighter';
+  const horizontal = ctx.createLinearGradient(0, S / 2, S, S / 2);
+  horizontal.addColorStop(0, 'rgba(255,255,255,0)');
+  horizontal.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+  horizontal.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = horizontal;
+  ctx.fillRect(0, S / 2 - 1, S, 3);
+  const vertical = ctx.createLinearGradient(S / 2, 0, S / 2, S);
+  vertical.addColorStop(0, 'rgba(255,255,255,0)');
+  vertical.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+  vertical.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = vertical;
+  ctx.fillRect(S / 2 - 1, 0, 3, S);
+  starTex = new THREE.CanvasTexture(cv);
+  starTex.colorSpace = THREE.SRGBColorSpace;
+  return starTex;
 }
 
-// ---------- Атмосфера и свечение ----------
+// Атмосфера: тонкий ореол по краю, окрашенный в сторону солнца
 const ATMO_VS = `
   varying vec3 vN;
+  varying vec3 vWN;
   void main() {
     vN = normalize(normalMatrix * normal);
+    vWN = normalize(mat3(modelMatrix) * normal);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }`;
 const ATMO_FS = `
-  uniform vec3 uColor;
+  uniform vec3 uColor, uSunColor, uSunDir;
   uniform float uStrength;
   varying vec3 vN;
+  varying vec3 vWN;
   void main() {
-    float i = pow(0.72 - dot(vN, vec3(0.0, 0.0, 1.0)), 2.6) * uStrength;
-    gl_FragColor = vec4(uColor, clamp(i, 0.0, 1.0));
+    float rim = pow(clamp(0.72 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 2.6);
+    float lit = clamp(dot(vWN, uSunDir) * 0.5 + 0.6, 0.0, 1.0);
+    vec3 col = mix(uColor, uSunColor, pow(lit, 3.0) * 0.6);
+    gl_FragColor = vec4(col * lit, clamp(rim * uStrength, 0.0, 1.0));
   }`;
-// Атмосфера: сфера чуть больше тела, видна только по краю
-export function atmosphere(radius, color, strength = 1.0) {
+export function atmosphere(radius, color, strength = 1.0, sunDir = new THREE.Vector3(0, 1, 0), sunColor = '#ffd7a0') {
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(color) }, uStrength: { value: strength } },
+    uniforms: {
+      uColor: { value: lin(color) }, uStrength: { value: strength },
+      uSunDir: { value: sunDir.clone().normalize() }, uSunColor: { value: lin(sunColor) }
+    },
     vertexShader: ATMO_VS,
     fragmentShader: ATMO_FS,
     side: THREE.BackSide,
@@ -204,46 +406,32 @@ export function atmosphere(radius, color, strength = 1.0) {
     transparent: true,
     depthWrite: false
   });
-  return new THREE.Mesh(new THREE.SphereGeometry(radius, 48, 32), mat);
+  return new THREE.Mesh(new THREE.SphereGeometry(radius, 64, 48), mat);
 }
 
-// ---------- GLSL ----------
-const GLSL_NOISE = `
-  float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-  float n3(vec3 p) {
-    vec3 i = floor(p), f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(
-      mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
-      mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y),
-      f.z);
-  }
-  float fbm3(vec3 p) {
-    float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) { v += a * n3(p); p *= 2.03; a *= 0.5; }
-    return v;
-  }`;
-
-// Солнце: поверхность с ползущим шумом
+// Солнце: поверхность с кипением в шуме и короной
 export function sunMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: { uTime: { value: 0 } },
     vertexShader: `
       varying vec3 vP;
       void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: GLSL_NOISE + `
+    fragmentShader: `
       uniform float uTime;
       varying vec3 vP;
+      ${GLSL_NOISE}
       void main() {
         vec3 p = normalize(vP) * 2.4;
-        float g = fbm3(p * 1.4 + fbm3(p * 2.2 + uTime * 0.12));
-        vec3 c = mix(vec3(1.0, 0.32, 0.08), vec3(1.0, 0.86, 0.5), smoothstep(0.25, 0.85, g));
-        gl_FragColor = vec4(c * 1.5, 1.0);
+        float g = warpFbm(p * 1.6 + uTime * 0.05, 5);
+        float spot = smoothstep(0.6, 0.8, fbm(p * 5.0 + uTime * 0.1, 3));
+        vec3 c = mix(vec3(1.0, 0.25, 0.04), vec3(1.0, 0.85, 0.5), smoothstep(0.3, 0.8, g));
+        c = mix(c, vec3(1.0, 0.55, 0.2), spot * 0.3);
+        gl_FragColor = vec4(c * 3.0, 1.0);
       }`
   });
 }
 
-// Диск вокруг чёрной дыры или портал: вращающийся шум по радиусу и углу
+// Вихрь: аккреционный диск и портал. colorA — края, colorB — горячее ядро (линейные цвета)
 export function vortexMaterial(inner, outer, colorA = [0.95, 0.38, 0.1], colorB = [1.0, 0.92, 0.7]) {
   return new THREE.ShaderMaterial({
     uniforms: {
@@ -253,7 +441,8 @@ export function vortexMaterial(inner, outer, colorA = [0.95, 0.38, 0.1], colorB 
     vertexShader: `
       varying vec2 vP;
       void main() { vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: GLSL_NOISE + `
+    fragmentShader: `
+      ${GLSL_NOISE}
       uniform float uTime, uInner, uOuter;
       uniform vec3 uA, uB;
       varying vec2 vP;
@@ -261,7 +450,7 @@ export function vortexMaterial(inner, outer, colorA = [0.95, 0.38, 0.1], colorB 
         float r = length(vP);
         float a = atan(vP.y, vP.x);
         float t = clamp((r - uInner) / (uOuter - uInner), 0.0, 1.0);
-        float swirl = fbm3(vec3(a * 1.6 + uTime * 0.9 - log(r) * 4.0, r * 0.05, uTime * 0.2));
+        float swirl = warpFbm(vec3(a * 0.9 + uTime * 0.5 - log(r) * 2.0, r * 0.05, uTime * 0.2), 4);
         float band = smoothstep(0.0, 0.25, t) * (1.0 - smoothstep(0.7, 1.0, t));
         vec3 c = mix(uA, uB, swirl) * (0.2 + 0.85 * (1.0 - t)) * (0.6 + 0.6 * swirl);
         gl_FragColor = vec4(c * band, 1.0);
@@ -273,84 +462,26 @@ export function vortexMaterial(inner, outer, colorA = [0.95, 0.38, 0.1], colorB 
   });
 }
 
-// Небесный купол: вертикальный градиент и мягкое солнце в направлении uSun
-export function skyMaterial(top, mid, horizon, sunDir, sunColor) {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uTop: { value: new THREE.Color(top) }, uMid: { value: new THREE.Color(mid) },
-      uHorizon: { value: new THREE.Color(horizon) }, uSun: { value: sunDir.clone().normalize() },
-      uSunColor: { value: new THREE.Color(sunColor) }
-    },
-    vertexShader: `
-      varying vec3 vDir;
-      void main() {
-        vDir = normalize(position);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: `
-      uniform vec3 uTop, uMid, uHorizon, uSun, uSunColor;
-      varying vec3 vDir;
-      void main() {
-        float y = vDir.y;
-        vec3 c = mix(uHorizon, uMid, smoothstep(0.0, 0.25, y));
-        c = mix(c, uTop, smoothstep(0.25, 0.8, y));
-        float s = max(dot(vDir, normalize(uSun)), 0.0);
-        c += uSunColor * (pow(s, 6.0) * 0.5 + pow(s, 80.0) * 1.2);
-        gl_FragColor = vec4(c, 1.0);
-      }`,
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false
-  });
-}
-
 // Синтвейв-солнце: полоски в нижней половине
 export function synthSunMaterial(top, bottom) {
   return new THREE.ShaderMaterial({
-    uniforms: { uTop: { value: new THREE.Color(top) }, uBottom: { value: new THREE.Color(bottom) }, uTime: { value: 0 } },
+    uniforms: { uTop: { value: lin(top) }, uBottom: { value: lin(bottom) } },
     vertexShader: `
       varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
       uniform vec3 uTop, uBottom;
-      uniform float uTime;
       varying vec2 vUv;
       void main() {
         vec2 p = vUv * 2.0 - 1.0;
         float r = length(p);
         if (r > 1.0) discard;
-        // Нижняя половина солнца «режется» горизонтальными полосами, как на классических синтвейв-постерах
         if (p.y < -0.25 && mod(floor((p.y + 1.0) * 14.0), 2.0) < 1.0) discard;
         vec3 c = mix(uBottom, uTop, smoothstep(-1.0, 1.0, p.y));
-        gl_FragColor = vec4(c, 1.0 - smoothstep(0.92, 1.0, r));
+        gl_FragColor = vec4(c * 2.2, 1.0 - smoothstep(0.92, 1.0, r));
       }`,
     transparent: true,
     depthWrite: false,
     fog: false
-  });
-}
-
-// Вода: тёмная поверхность с бегущими бликами
-export function waterMaterial(deep, glint) {
-  return new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uDeep: { value: new THREE.Color(deep) }, uGlint: { value: new THREE.Color(glint) } },
-    vertexShader: `
-      varying vec3 vW;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vW = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }`,
-    fragmentShader: GLSL_NOISE + `
-      uniform float uTime;
-      uniform vec3 uDeep, uGlint;
-      varying vec3 vW;
-      void main() {
-        float w = fbm3(vec3(vW.x * 0.02, vW.z * 0.02, uTime * 0.25));
-        float glint = smoothstep(0.64, 0.74, w) * 0.3;
-        vec3 c = uDeep + uGlint * glint;
-        float fade = 1.0 - smoothstep(400.0, 2600.0, length(vW - cameraPosition));
-        gl_FragColor = vec4(mix(uDeep * 0.6, c, fade), 1.0);
-      }`
   });
 }

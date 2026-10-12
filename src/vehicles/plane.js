@@ -78,7 +78,7 @@ function build(accent) {
     update(dt, t, S) {
       const power = Math.min(1, S.speed / 60);
       glows.forEach((g, i) => {
-        g.material.opacity = (0.55 + 0.35 * Math.sin(t * 38 + i * 2)) * (0.3 + 0.7 * power);
+        g.material.opacity = (0.36 + 0.16 * Math.sin(t * 38 + i * 2)) * (0.3 + 0.7 * power);
         g.scale.setScalar(2.6 + 2.2 * power + Math.sin(t * 30 + i) * 0.25);
       });
       const blink = Math.sin(t * 5.2) > 0.2;

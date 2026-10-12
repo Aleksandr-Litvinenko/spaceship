@@ -1,6 +1,6 @@
 // Спорткар: низкий кузов, кабина, неоновая подсветка снизу, фары и вращающиеся колёса. Едет по трассе.
 import * as THREE from '../three.js';
-import { hull, dark, glass, neon, flare, result } from './shared.js';
+import { paint, dark, glass, neon, flare, result, rubber, chrome } from './shared.js';
 import { glow } from '../core/gfx.js';
 
 // Кузов задаётся профилем в плоскости XY (x — длина, нос в +x), потом выдавливается по ширине
@@ -34,8 +34,8 @@ function wheel(paint) {
 
 function build(accent) {
   const group = new THREE.Group();
-  const paint = hull(0x1c2338);
-  group.add(new THREE.Mesh(extrudeSide([[-2.3, 0.45], [2.3, 0.45], [2.35, 0.78], [2.2, 0.98], [1.7, 1.02], [-2.2, 1.02], [-2.3, 0.78]], 1.9), paint));
+  const body = paint(0x1c2338);
+  group.add(new THREE.Mesh(extrudeSide([[-2.3, 0.45], [2.3, 0.45], [2.35, 0.78], [2.2, 0.98], [1.7, 1.02], [-2.2, 1.02], [-2.3, 0.78]], 1.9), body));
 
   const cabin = new THREE.Mesh(extrudeSide([[-1.25, 1.0], [-0.55, 1.62], [0.85, 1.62], [1.45, 1.0]], 1.5, 0.06), glass(0x06203a, accent));
   cabin.position.set(0, 0.0, 0);

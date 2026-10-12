@@ -10,6 +10,7 @@
   "scripts": {
     "fetch": "node scripts/fetch-github.mjs",
     "build": "node scripts/build.mjs",
+    "vendor": "node scripts/vendor-three.mjs",
     "dev": "python3 -m http.server 8000 --bind 127.0.0.1",
     "deploy": "bash scripts/deploy-jino.sh"
   }

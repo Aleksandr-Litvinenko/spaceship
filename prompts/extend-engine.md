@@ -30,21 +30,27 @@
 
 ## Новый мир (src/env/<имя>.js)
 
-1. Экспортируй функцию `build(scene, { content, pixelRatio, accent })`. Она добавляет объекты в сцену и возвращает объект:
+1. Экспортируй функцию `build(scene, { content, renderer, quality, pixelRatio, accent })`. Она добавляет объекты в сцену и возвращает объект:
    ```js
    {
      name: 'имя',
      targets: [makeTarget({ id, kind, name, when, obj, radius, dockDist, accent, data, labelRange })],
-     groundY,            // высота земли или моря; для вертолёта — минимальная высота
-     spawn: { pos, yaw, arriveFrom },   // где стоит транспорт и откуда прилетает
-     lights: [THREE.Light, ...],
-     background,         // цвет фона (hex)
+     groundY,                         // высота земли или моря; для вертолёта — минимальная высота
+     spawn: { pos, yaw, arriveFrom }, // где стоит транспорт и откуда прилетает
+     lights: [THREE.Light, ...],      // солнце и заливка; первый свет с тенями — в shadows
+     environment: texture,            // карта окружения (PMREM) для отражений; обычно buildEnvironment(renderer, envScene)
+     background: Color | null,
      fog: { color, density },
-     update(dt, t)       // анимация мира
+     shadows: { light, extent, follow } | null,  // тени только на high/ultra
+     grade: { vignette, warm, bloom, threshold }, // параметры постобработки мира
+     update(dt, t, focus)             // анимация; focus — позиция транспорта (для теней)
    }
    ```
+   - `renderer` нужен для запекания текстур на GPU: `planetMaps`, `cloudMap`, `asphaltMaps`, `nebulaTexture`, `waterNormals` и т.д. из `src/core/gfx.js`.
+   - `quality` — `low`, `high` или `ultra`: на `low` делайте меньше текстур и без теней (см. `QUALITY` в `src/core/render.js`).
+   - Текстуры, которые запекаются на GPU, нельзя клонировать (`.clone()`): возвращённый объект — render target, клон ломает загрузку.
 2. Цели (`targets`) — одна на каждый проект, одна на `about` (`kind: 'about'`) и одна на контакты (`kind: 'contact'`). Порядок: about первым, contact последним. `obj` — THREE.Object3D, к которому стыкуются. `radius` — примерный размер; от него зависят подсказка «вход в орбиту» и обнаружение. `dockDist` — на каком расстоянии от объекта стоит транспорт при стыковке.
-3. Используй `makeTarget` и палитры из `src/env/common.js`, текстуры и шейдеры — из `src/core/gfx.js`.
+3. Используй `makeTarget` и палитры из `src/env/common.js`, текстуры и шейдеры — из `src/core/gfx.js`. Небо — аддон `Sky`, вода — аддон `Water` (лежат в `src/vendor/jsm`).
 4. Зарегистрируй мир в `src/env/index.js` (объект ENVIRONMENTS).
 5. Добавь имя в `ENVIRONMENTS` в `src/core/content.js` и укажи, каким транспортом он доступен (VEHICLE_ENV).
 6. Проверка: `npm run build`, затем открой сайт с транспортом этого мира и посмотри, что проекты видны, подписи не перекрываются, стыковка работает (кликни по цели в списке маршрута).

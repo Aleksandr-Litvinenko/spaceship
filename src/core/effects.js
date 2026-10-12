@@ -5,7 +5,7 @@ import { glow } from './gfx.js';
 import { rnd } from './util.js';
 
 export class Particles {
-  constructor(scene, { max = 420, size = 1.9, hot = [1.0, 0.75, 0.45], cool = [0.4, 0.8, 1.0], drag = 1.6, spread = 5 } = {}) {
+  constructor(scene, { max = 420, size = 1.9, hot = [0.55, 0.38, 0.2], cool = [0.18, 0.36, 0.5], drag = 1.6, spread = 5 } = {}) {
     this.max = max;
     this.hot = hot;
     this.cool = cool;

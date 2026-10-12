@@ -1,4 +1,4 @@
-// Точка входа движка: читает контент, выбирает транспорт и мир, запускает прилёт и цикл кадров.
+// Точка входа движка: качество → рендерер → материалы → мир → транспорт → постобработка → цикл кадров.
 import * as THREE from './three.js';
 import { resolveContent } from './core/content.js';
 import { VEHICLES } from './vehicles/index.js';
@@ -7,9 +7,9 @@ import { createController } from './core/controller.js';
 import { createInput } from './core/input.js';
 import { createUI } from './core/ui.js';
 import { Particles } from './core/effects.js';
-
-// Цвета задаём как в обычном CSS (hex = sRGB, без перевода в линейное пространство) — так шейдеры и материалы совпадают
-THREE.ColorManagement.enabled = false;
+import { chooseQuality, createRenderer, QUALITY } from './core/render.js';
+import { createPost } from './core/post.js';
+import { initMaterials } from './vehicles/shared.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -34,30 +34,45 @@ async function boot() {
   const envName = content.environment;
   const accent = content.site.accent[0];
 
-  const canvas = $('#scene');
-  const pixelRatio = Math.min(devicePixelRatio || 1, 1.5);
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(pixelRatio);
-  renderer.setSize(innerWidth, innerHeight);
+  // Качество: ?q=low|high|ultra, иначе по устройству
+  const quality = chooseQuality(params.get('q'));
+  const Q = QUALITY[quality];
 
+  const canvas = $('#scene');
+  const renderer = createRenderer(canvas, quality);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.8, 12000);
+  const pixelRatio = renderer.getPixelRatio();
 
-  // Мир, потом транспорт в нём
-  const world = ENVIRONMENTS[envName](scene, { content, pixelRatio, accent });
+  // Материалы с процедурными картами (панели, флейк, соты) запекаются один раз на GPU
+  initMaterials(renderer);
+
+  // Мир: текстуры планет, небо, вода, асфальт — всё генерируется здесь
+  const world = ENVIRONMENTS[envName](scene, { content, renderer, quality, pixelRatio, accent });
   world.lights.forEach((l) => scene.add(l));
-  scene.background = new THREE.Color(world.background);
+  scene.environment = world.environment;
+  scene.background = world.background;
   scene.fog = new THREE.FogExp2(world.fog.color, world.fog.density);
 
+  // Транспорт
   const model = vehicle.build(accent);
   scene.add(model.group);
   const exhaust = vehicle.spec.exhaust && model.nozzles.length
-    ? new Particles(scene, { max: 420, size: vehicle.spec.control === 'drive' ? 0.9 : 1.9 })
+    ? new Particles(scene, { max: 300, size: vehicle.spec.control === 'drive' ? 0.9 : 1.2 })
     : null;
 
   const ctrl = createController(vehicle.spec, { groundY: world.groundY });
   ctrl.setPose(world.spawn.pos, world.spawn.yaw);
   ctrl.arrive(world.spawn.arriveFrom, world.spawn.pos, 6.5);
+
+  // Постобработка: на high и ultra; на low сцена рисуется напрямую
+  const post = Q.post
+    ? createPost({ renderer, scene, camera, width: innerWidth, height: innerHeight, pixelRatio, samples: Q.samples, bloom: world.grade.bloom, threshold: world.grade.threshold })
+    : null;
+  if (post) {
+    post.grade.uniforms.uVignette.value = world.grade.vignette;
+    post.grade.uniforms.uWarm.value = world.grade.warm;
+  }
 
   /* ---------- Интерфейс и управление ---------- */
   const ui = createUI({ content, vehicles: VEHICLES, vehicleName, envName });
@@ -123,7 +138,7 @@ async function boot() {
     frameNo++;
 
     ctrl.update(dt, input.read());
-    world.update(dt, t);
+    world.update(dt, t, ctrl.state.pos);
     const S = ctrl.state;
     model.group.position.copy(S.pos);
     model.group.quaternion.copy(S.quat);
@@ -147,12 +162,14 @@ async function boot() {
     if (!revealed && S.mode === 'idle' && !S.started) {
       revealed = true;
       ui.revealIntro();
+      document.body.classList.add('is-ready');
     }
     if (frameNo % 8 === 0 && input.pointer.on) {
       canvas.style.cursor = pick(input.pointer.cx, input.pointer.cy) ? 'pointer' : 'crosshair';
     }
 
-    renderer.render(scene, camera);
+    if (post) post.render(t);
+    else renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
 
@@ -160,17 +177,20 @@ async function boot() {
     renderer.setSize(innerWidth, innerHeight);
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
+    if (post) post.setSize(innerWidth, innerHeight);
   });
 
   // Для отладки в консоли: ?debug=1
-  if (params.has('debug')) window.spaceship = { content, world, ctrl, camera, scene, vehicle: vehicleName, env: envName };
+  if (params.has('debug')) window.spaceship = { content, world, ctrl, camera, scene, renderer, vehicle: vehicleName, env: envName, quality };
 
   frame();
+  $('#loader')?.remove();
 }
 
 boot().catch((err) => {
   console.error(err);
-  const box = document.querySelector('#boot-error');
+  $('#loader')?.remove();
+  const box = $('#boot-error');
   if (box) {
     box.hidden = false;
     box.textContent = 'Не удалось собрать сайт: ' + err.message;
